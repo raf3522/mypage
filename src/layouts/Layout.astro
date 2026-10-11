@@ -1,0 +1,419 @@
+---
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+// メニューデータ
+const navItems = [
+  { name: 'Home', href: '/' },
+  { name: 'About', href: '/about' },
+  { name: 'Reading', href: '/read' },
+  { 
+    name: 'Game', 
+    href: '/game/', 
+    subItems: [
+      { name: 'None', href: '/game/demo/' }
+    ] 
+  },
+];
+---
+
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@100..900&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <header class="header-container" id="headerContainer">
+      <!-- スマホ用トグルボタン -->
+      <button class="menu-btn" id="menuToggle" aria-label="メニューを開閉する">
+        <span class="bar bar-top"></span>
+        <span class="bar bar-bottom"></span>
+      </button>
+
+      <!-- 伸びるバー本体 -->
+      <div class="nav-bar">
+        <a href="/" class="logo">PORTFOLIO</a>
+
+        <nav class="nav">
+          {navItems.map((item) => (
+            item.subItems ? (
+              <div class="nav-dropdown-group">
+                <button class="nav-link dropdown-toggle">
+                  {item.name}
+                  <svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                  {item.subItems.map((sub) => (
+                    <a href={sub.href} class="dropdown-link">{sub.name}</a>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <a href={item.href} class="nav-link">{item.name}</a>
+            )
+          ))}
+        </nav>
+      </div>
+    </header>
+
+    <!-- メインコンテンツ領域 -->
+    <div class="page-container">
+      <main class="main-card">
+        <slot />
+      </main>
+
+      <footer class="footer">
+        © 2026 〇〇
+      </footer>
+    </div>
+
+    <!-- 開閉 ＆ リサイズちらつき防止用スクリプト -->
+    <script>
+      const container = document.getElementById('headerContainer');
+      const toggle = document.getElementById('menuToggle');
+
+      // 全体メニューの開閉（スマホ時）
+      toggle?.addEventListener('click', () => {
+        container?.classList.toggle('is-open');
+      });
+
+      // ドロップダウンのアコーディオン開閉（スマホ時）
+      const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+      dropdownToggles.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (window.innerWidth <= 768) {
+            const group = (e.currentTarget as HTMLElement).closest('.nav-dropdown-group');
+            group?.classList.toggle('is-active');
+          }
+        });
+      });
+
+      // リサイズ時のちらつき防止
+      let resizeTimer: ReturnType<typeof setTimeout>;
+      window.addEventListener('resize', () => {
+        document.body.classList.add('resize-animation-stopper');
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          document.body.classList.remove('resize-animation-stopper');
+        }, 350);
+
+        if (window.innerWidth > 768) {
+          container?.classList.remove('is-open');
+          document.querySelectorAll('.nav-dropdown-group').forEach(el => el.classList.remove('is-active'));
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<!-- リサイズ中アニメーション停止用（グローバル） -->
+<style is:global>
+  body.resize-animation-stopper,
+  body.resize-animation-stopper * {
+    transition: none !important;
+    animation: none !important;
+  }
+</style>
+
+<!-- ヘッダー＆レイアウト用スタイル -->
+<style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: "Noto Sans JP", sans-serif;
+    line-height: 1.8;
+    color: #334155; /* 濃いグレー（ライトテーマ用） */
+    background-color: #ffffff; /* 白背景 */
+    min-height: 100vh;
+  }
+
+  /* ----------------------------------------------------
+   * ヘッダー基盤（PC表示時：右端密着バー）
+   * ---------------------------------------------------- */
+  .header-container {
+    position: fixed;
+    top: 24px;
+    right: 0;
+    z-index: 1000;
+  }
+
+  .menu-btn {
+    display: none;
+  }
+
+  .nav-bar {
+    height: 52px;
+    border-radius: 9999px 0 0 9999px;
+    background-color: rgba(255, 255, 255, 0.85); /* 半透明の白 */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: -4px 4px 16px rgba(0, 0, 0, 0.05); /* 影を薄く */
+    border: 1px solid rgba(0, 0, 0, 0.08); /* 枠線を薄いグレーに */
+    border-right: none;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    padding: 0 32px 0 28px;
+    position: relative;
+  }
+
+  .nav-bar::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 80%;
+    height: 2px;
+    background: linear-gradient(to left, #0ea5e9, rgba(14, 165, 233, 0.2) 75%, transparent); /* 水色のアクセントライン */
+    pointer-events: none;
+  }
+
+  .logo {
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: #1e293b; /* ロゴを黒系に */
+    text-decoration: none;
+  }
+
+  .nav {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+    height: 100%;
+  }
+
+  .nav-link {
+    color: #475569; /* リンク文字を落ち着いたグレーに */
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 500;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    cursor: pointer;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .nav-link:hover {
+    color: #0f172a; /* ホバー時に濃いグレーへ */
+    background-color: #f1f5f9; /* ホバー時に薄いグレーの背景 */
+  }
+
+  /* ----------------------------------------------------
+   * ドロップダウン（下の階層）のスタイル
+   * ---------------------------------------------------- */
+  .nav-dropdown-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+
+  /* 矢印アイコンの回転 */
+  .chevron {
+    transition: transform 0.2s ease;
+  }
+  .nav-dropdown-group:hover .chevron {
+    transform: rotate(180deg);
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 180px;
+    padding: 0.5rem 0;
+    margin-top: 10px;
+    background-color: rgba(255, 255, 255, 0.95); /* ドロップダウン背景を白に */
+    border: 1px solid rgba(0, 0, 0, 0.08); /* 枠線を薄いグレーに */
+    border-radius: 12px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.25s ease;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* 影を薄く */
+  }
+
+  /* PC時：ホバーで下の階層を表示 */
+  .nav-dropdown-group:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  .dropdown-link {
+    display: block;
+    padding: 8px 16px;
+    color: #475569; /* ドロップダウン内のリンクも落ち着いたグレーに */
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.2s, background-color 0.2s;
+  }
+
+  .dropdown-link:hover {
+    color: #0f172a;
+    background-color: #f1f5f9; /* ホバー時に薄いグレーの背景 */
+  }
+
+  /* ----------------------------------------------------
+   * スマホ表示時（768px以下）
+   * ---------------------------------------------------- */
+  @media (max-width: 768px) {
+    .header-container {
+      top: 16px;
+      right: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .menu-btn {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background-color: rgba(255, 255, 255, 0.85); /* スマホボタンを白に */
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      z-index: 1002;
+    }
+
+    .menu-btn .bar {
+      width: 20px;
+      height: 2px;
+      background-color: #334155; /* 三本線を濃いグレーに */
+      border-radius: 2px;
+      transition: transform 0.3s ease;
+    }
+
+    .nav-bar {
+      position: absolute;
+      top: 56px;
+      right: 0;
+      height: auto;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.25rem;
+      padding: 1.5rem;
+      min-width: 180px;
+      border-radius: 20px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background-color: rgba(255, 255, 255, 0.95); /* 開いたスマホメニューを白に */
+
+      visibility: hidden;
+      opacity: 0;
+      transform: scale(0.85) translateY(-10px);
+      transform-origin: top right;
+      transition: opacity 0.25s, transform 0.25s, visibility 0.25s step-end;
+    }
+
+    .header-container.is-open .nav-bar {
+      visibility: visible;
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      transition: opacity 0.25s, transform 0.25s, visibility 0s;
+    }
+
+    .header-container.is-open .bar-top { transform: translateY(3.5px) rotate(45deg); }
+    .header-container.is-open .bar-bottom { transform: translateY(-3.5px) rotate(-45deg); }
+
+    .nav {
+      flex-direction: column;
+      gap: 0.75rem;
+      width: 100%;
+    }
+
+    .nav-link { width: 100%; }
+
+    /* スマホ時：ドロップダウンのアコーディオン化 */
+    .nav-dropdown-group {
+      width: 100%;
+      flex-direction: column;
+      align-items: flex-start;
+      height: auto;
+    }
+
+    .dropdown-menu {
+      position: static;
+      width: 100%;
+      margin-top: 0;
+      padding: 0;
+      background: none;
+      border: none;
+      box-shadow: none;
+      display: none;
+      opacity: 1;
+      visibility: visible;
+      transform: none;
+    }
+
+    .nav-dropdown-group.is-active .dropdown-menu {
+      display: flex;
+      flex-direction: column;
+      padding-left: 1rem;
+      margin-top: 0.5rem;
+    }
+
+    .nav-dropdown-group.is-active .chevron {
+      transform: rotate(180deg);
+    }
+  }
+
+  /* ----------------------------------------------------
+   * メインコンテンツ配置
+   * ---------------------------------------------------- */
+  .page-container {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+    margin-top: 104px;
+  }
+
+  @media (max-width: 768px) {
+    .page-container { margin-top: 80px; padding: 0 1rem 2rem; }
+  }
+
+  .main-card {
+    background-color: #ffffff; /* メインカードを白に */
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08); /* 影を薄く自然に */
+    padding: 2.5rem;
+  }
+
+  @media (max-width: 768px) {
+    .main-card { padding: 1.5rem; }
+  }
+
+  .footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    font-size: 0.85rem;
+    color: #94a3b8; /* フッター文字を少し明るめのグレーに */
+    text-align: center;
+  }
+</style>
